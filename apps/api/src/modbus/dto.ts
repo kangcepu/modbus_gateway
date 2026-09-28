@@ -20,6 +20,7 @@ export class GatewayDto {
   @IsString() @MinLength(1) @MaxLength(100) name: string;
   @IsString() @MinLength(1) @MaxLength(253) host: string;
   @IsOptional() @IsInt() @Min(1) @Max(65535) port = 502;
+  @IsOptional() @IsIn(["tcp", "rtu"]) transport: "tcp" | "rtu" = "tcp";
   @IsOptional() @IsInt() @Min(250) @Max(3600000) pollIntervalMs = 1000;
   @IsOptional() @IsBoolean() enabled = true;
 }
@@ -48,6 +49,7 @@ export class UpdateDeviceDto {
   @IsOptional() @IsString() @MinLength(1) @MaxLength(100) name?: string;
   @IsOptional() @IsString() @MinLength(1) @MaxLength(253) host?: string;
   @IsOptional() @IsInt() @Min(1) @Max(65535) port?: number;
+  @IsOptional() @IsIn(["tcp", "rtu"]) transport?: "tcp" | "rtu";
   @IsOptional() @IsInt() @Min(0) @Max(247) unitId?: number;
   @IsOptional() @IsInt() @Min(250) @Max(3600000) pollIntervalMs?: number;
   @IsOptional() @IsBoolean() enabled?: boolean;

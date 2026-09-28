@@ -10,6 +10,7 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import ModbusRTU from "modbus-serial";
+import { RtuTcpPort } from "./rtu-tcp-port";
 import { ModbusTag } from "./entities/modbus-tag.entity";
 import { Telemetry } from "./entities/telemetry.entity";
 import { Machine } from "./entities/machine.entity";
@@ -95,6 +96,7 @@ export class ModbusService implements OnModuleInit, OnModuleDestroy {
         gatewayName: g.name,
         host: g.host,
         port: g.port,
+        transport: g.transport,
         pollIntervalMs: g.pollIntervalMs,
         gatewayEnabled: g.enabled,
         machineEnabled: m.enabled,
@@ -108,13 +110,18 @@ export class ModbusService implements OnModuleInit, OnModuleDestroy {
   }
   async updateGateway(id: string, input: UpdateDeviceDto) {
     const gateway = await this.gateways.findOneByOrFail({ id });
-    const { name, host, port, pollIntervalMs, enabled } = input;
+    const { name, host, port, transport, pollIntervalMs, enabled } = input;
     Object.assign(
       gateway,
       Object.fromEntries(
-        Object.entries({ name, host, port, pollIntervalMs, enabled }).filter(
-          ([, v]) => v !== undefined,
-        ),
+        Object.entries({
+          name,
+          host,
+          port,
+          transport,
+          pollIntervalMs,
+          enabled,
+        }).filter(([, v]) => v !== undefined),
       ),
     );
     this.lastPoll.clear();
@@ -173,6 +180,7 @@ export class ModbusService implements OnModuleInit, OnModuleDestroy {
             name: input.host,
             host: input.host,
             port: input.port,
+            transport: input.transport,
             pollIntervalMs: input.pollIntervalMs,
             enabled: true,
           }),
@@ -215,6 +223,7 @@ export class ModbusService implements OnModuleInit, OnModuleDestroy {
         Object.entries({
           host: input.host,
           port: input.port,
+          transport: input.transport,
           pollIntervalMs: input.pollIntervalMs,
         }).filter(([, v]) => v !== undefined),
       );
@@ -352,6 +361,28 @@ export class ModbusService implements OnModuleInit, OnModuleDestroy {
   private endpoint(device: { host: string; port: number }) {
     return `${device.host}:${device.port}`;
   }
+  // "rtu" targets transparent serial-to-Ethernet converters (e.g. USR-TCP232-306 in
+  // TCP Server mode): they relay raw bytes, so we tunnel actual RTU frames
+  // (address+PDU+CRC16) via RtuTcpPort instead of wrapping requests in a Modbus
+  // TCP MBAP header. modbus-serial's own connectTcpRTUBuffered still adds an MBAP
+  // header on the wire (it only differs from connectTCP in response parsing), so
+  // it does not work against a transparent converter.
+  private connect(
+    client: ModbusRTU,
+    g: { host: string; port: number; transport: string },
+  ) {
+    if (g.transport !== "rtu") return client.connectTCP(g.host, { port: g.port });
+    (client as unknown as { _port: RtuTcpPort })._port = new RtuTcpPort(
+      g.host,
+      {
+        port: g.port,
+        timeout: (client as unknown as { _timeout?: number })._timeout,
+      },
+    );
+    return new Promise<void>((resolve, reject) => {
+      client.open((error?: Error) => (error ? reject(error) : resolve()));
+    });
+  }
   private async target(id: string) {
     return this.machines.findOneOrFail({
       where: { id },
@@ -371,7 +402,7 @@ export class ModbusService implements OnModuleInit, OnModuleDestroy {
     this.locks.add(key);
     client.setTimeout(input.timeoutMs);
     try {
-      await client.connectTCP(g.host, { port: g.port });
+      await this.connect(client, g);
       client.setID(unitId);
       try {
         const values = await this.readByFunction(
@@ -424,7 +455,7 @@ export class ModbusService implements OnModuleInit, OnModuleDestroy {
     this.locks.add(key);
     client.setTimeout(input.timeoutMs);
     try {
-      await client.connectTCP(g.host, { port: g.port });
+      await this.connect(client, g);
       for (let unitId = input.from; unitId <= input.to; unitId++) {
         try {
           client.setID(unitId);
@@ -517,7 +548,7 @@ export class ModbusService implements OnModuleInit, OnModuleDestroy {
     const client = new ModbusRTU();
     client.setTimeout(1000);
     try {
-      await client.connectTCP(g.host, { port: g.port });
+      await this.connect(client, g);
       for (const machine of machines) {
         if (this.stopped) break;
         client.setID(machine.unitId);

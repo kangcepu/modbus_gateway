@@ -7,6 +7,7 @@ export class ModbusGatewayConfig {
   @Column({ length: 100 }) name: string;
   @Column() host: string;
   @Column({ default: 502 }) port: number;
+  @Column({ default: 'tcp' }) transport: 'tcp' | 'rtu';
   @Column({ name: 'poll_interval_ms', default: 1000 }) pollIntervalMs: number;
   @Column({ default: true }) enabled: boolean;
   @CreateDateColumn({ name: 'created_at' }) createdAt: Date;

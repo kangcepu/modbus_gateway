@@ -20,6 +20,7 @@ type Device = {
   name: string;
   host: string;
   port: number;
+  transport?: "tcp" | "rtu";
   unitId: number;
   enabled: boolean;
   gatewayId?: string;
@@ -74,6 +75,16 @@ const deviceFields = (d?: Device): Field[] => [
     value: d?.port ?? 502,
     min: 1,
     max: 65535,
+  },
+  {
+    name: "transport",
+    label: "Jenis koneksi",
+    options: ["tcp", "rtu"],
+    optionLabels: {
+      tcp: "Modbus TCP (gateway asli / MBAP)",
+      rtu: "RTU over TCP (converter transparan, mis. USR-TCP232)",
+    },
+    value: d?.transport ?? "tcp",
   },
   {
     name: "unitId",
@@ -355,7 +366,9 @@ export function Management({
                 <div>
                   <h2 className="text-base font-semibold">{d.name}</h2>
                   <p className="mt-1 text-xs text-slate-500">
-                    {d.host}:{d.port} · Unit ID {d.unitId} ·{" "}
+                    {d.host}:{d.port}
+                    {d.transport === "rtu" ? " · RTU over TCP" : ""} · Unit ID{" "}
+                    {d.unitId} ·{" "}
                     {d.pollIntervalMs ?? 1000} ms
                   </p>
                   <span className="badge mt-3">
