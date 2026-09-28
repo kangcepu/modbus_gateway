@@ -1,0 +1,4 @@
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { UserSession } from './user-session.entity';
+import { RoleGroup } from '../../access/entities/role-group.entity';
+@Entity('app_users') export class AppUser { @PrimaryGeneratedColumn('uuid') id: string; @Column({ unique: true, length: 50 }) username: string; @Column({ name: 'password_hash' }) passwordHash: string; @Column({ length: 100 }) name: string; @Column({ default: 'operator' }) role: string; @Column({ name: 'role_group_id', nullable: true }) roleGroupId?: string; @ManyToOne(() => RoleGroup, group => group.users, { nullable: true, onDelete: 'SET NULL' }) @JoinColumn({ name: 'role_group_id' }) roleGroup?: RoleGroup; @CreateDateColumn({ name: 'created_at' }) createdAt: Date; @UpdateDateColumn({ name: 'updated_at' }) updatedAt: Date; @OneToMany(() => UserSession, s => s.user) sessions: UserSession[]; }

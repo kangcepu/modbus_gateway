@@ -1,0 +1,12 @@
+{
+  "name": "iot-modbus-monitoring",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w @iot/api\" \"npm run dev -w @iot/web\"",
+    "build": "npm run build -w @iot/api && npm run build -w @iot/web",
+    "migration:run": "npm run migration:run -w @iot/api",
+    "migration:revert": "npm run migration:revert -w @iot/api"
+  },
+  "devDependencies": { "concurrently": "^9.1.2" }
+}

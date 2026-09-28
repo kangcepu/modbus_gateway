@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-sm text-slate-900 antialiased;
+    font-family: var(--font-inter), sans-serif;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+  button {
+    @apply transition-colors;
+  }
+  button:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2;
+  }
+}
+@layer components {
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  }
+  .btn {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60;
+  }
+  .btn-secondary {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50;
+  }
+  .field {
+    @apply block space-y-1.5 text-xs font-medium text-slate-600;
+  }
+  .input {
+    @apply h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100;
+  }
+  .login-label {
+    @apply block text-xs font-semibold uppercase tracking-wide text-white/90;
+  }
+  .login-input {
+    @apply mt-1.5 h-11 w-full rounded-xl border-0 bg-white px-4 text-sm font-normal normal-case text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-white/70;
+  }
+  .page-heading {
+    @apply mb-6 flex flex-wrap items-start justify-between gap-4;
+  }
+  .page-heading h1 {
+    @apply text-xl font-semibold tracking-tight text-slate-900;
+  }
+  .page-heading p {
+    @apply mt-1 text-sm text-slate-500;
+  }
+  .empty {
+    @apply px-6 py-12 text-center text-sm text-slate-500;
+  }
+  .notice {
+    @apply mb-4 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700;
+  }
+  .table-wrap {
+    @apply relative overflow-x-auto rounded-lg border border-slate-200;
+  }
+  .data-table {
+    @apply w-full text-left text-sm;
+  }
+  .data-table th {
+    @apply relative whitespace-nowrap bg-slate-50 px-4 py-3 text-xs font-medium text-slate-500;
+  }
+  .data-table td {
+    @apply border-t border-slate-100 px-4 py-3 text-slate-600;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600;
+  }
+  .icon-btn {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100;
+  }
+  .crud-area {
+    @apply grid gap-4;
+  }
+  .crud-form,
+  .crud-card,
+  .crud-list {
+    @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm;
+  }
+  .crud-form h2 {
+    @apply mb-4 text-base font-semibold;
+  }
+  .crud-form > div {
+    @apply grid gap-4 sm:grid-cols-2 xl:grid-cols-3;
+  }
+  .crud-form label {
+    @apply grid gap-1.5 text-xs font-medium text-slate-600;
+  }
+  .crud-form input:not([type="checkbox"]),
+  .crud-form select {
+    @apply input;
+  }
+  .crud-form > button {
+    @apply btn mt-4;
+  }
+  .crud-form.compact {
+    @apply mt-5 bg-slate-50 shadow-none;
+  }
+  .crud-title {
+    @apply flex items-start justify-between gap-3;
+  }
+  .crud-title b,
+  .crud-title small {
+    @apply block;
+  }
+  .crud-title small {
+    @apply mt-1 text-xs text-slate-500;
+  }
+  .crud-title > span,
+  .crud-list article > span:last-child {
+    @apply flex gap-1;
+  }
+  .delete {
+    @apply icon-btn;
+  }
+  .delete:last-child {
+    @apply text-rose-600 hover:bg-rose-50;
+  }
+  .tag-lines {
+    @apply mt-4 grid gap-2 text-sm text-slate-600;
+  }
+  .tag-lines > span {
+    @apply flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 p-3;
+  }
+  .tag-lines button {
+    @apply rounded px-2 py-1 text-xs text-brand-600 hover:bg-brand-50;
+  }
+  .crud-list {
+    @apply p-0;
+  }
+  .crud-list article {
+    @apply grid items-center gap-3 border-b border-slate-100 p-4 last:border-0 sm:grid-cols-[1fr_2fr_auto];
+  }
+  .crud-list article > span {
+    @apply break-words text-xs text-slate-500;
+  }
+  .crud-message {
+    @apply notice;
+  }
+  .permission-checks {
+    @apply mt-4 flex flex-wrap gap-3;
+  }
+  .permission-checks label {
+    @apply flex items-center gap-2 text-xs;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

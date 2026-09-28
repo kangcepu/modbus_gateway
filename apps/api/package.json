@@ -1,0 +1,40 @@
+{
+  "name": "@iot/api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "PORT=3003 nest start --watch",
+    "build": "nest build",
+    "start": "PORT=3003 node dist/main",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate src/database/migrations/Schema -d src/database/data-source.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.4.15",
+    "@nestjs/core": "^10.4.15",
+    "@nestjs/platform-express": "^10.4.15",
+    "@nestjs/platform-socket.io": "^10.4.15",
+    "@nestjs/typeorm": "^10.0.2",
+    "@nestjs/websockets": "^10.4.15",
+    "bcryptjs": "^3.0.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "dotenv": "^16.4.7",
+    "minio": "^8.0.7",
+    "modbus-serial": "^8.0.21",
+    "pg": "^8.13.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.8.1",
+    "typeorm": "^0.3.20"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.4.9",
+    "@nestjs/schematics": "^10.2.3",
+    "@nestjs/testing": "^10.4.15",
+    "@types/node": "^22.10.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}
