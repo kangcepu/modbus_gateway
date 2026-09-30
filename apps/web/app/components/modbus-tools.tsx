@@ -1,17 +1,50 @@
 "use client";
 import { useState } from "react";
-import { Loader2, PlugZap, Search } from "lucide-react";
+import { Loader2, PlugZap, Radio, Search } from "lucide-react";
 import { request } from "@/lib/session";
 import type { Device } from "@/lib/monitoring";
+type CaptureEvent = {
+  at: string;
+  direction: "rx" | "tx";
+  hex: string;
+  length: number;
+};
 export function ModbusTools({ device }: { device: Device }) {
   const [unitId, setUnitId] = useState(device.unitId),
     [fc, setFc] = useState(device.tags[0]?.functionCode || 3),
     [address, setAddress] = useState(device.tags[0]?.address || 0),
     [from, setFrom] = useState(1),
     [to, setTo] = useState(10),
+    [durationMs, setDurationMs] = useState(3000),
+    [probeHex, setProbeHex] = useState(""),
+    [captureEvents, setCaptureEvents] = useState<CaptureEvent[] | null>(null),
+    [captureMessage, setCaptureMessage] = useState(""),
     [busy, setBusy] = useState(""),
     [message, setMessage] = useState(""),
     [error, setError] = useState(false);
+  const capture = async () => {
+    setBusy("capture");
+    setCaptureMessage("");
+    setCaptureEvents(null);
+    try {
+      const result = await request(`devices/${device.id}/raw-capture`, {
+        method: "POST",
+        body: JSON.stringify({
+          durationMs,
+          probeHex: probeHex.replace(/\s+/g, "") || undefined,
+        }),
+      });
+      setCaptureEvents(result.events);
+      setCaptureMessage(result.message);
+    } catch (e) {
+      setCaptureEvents([]);
+      setCaptureMessage(
+        e instanceof Error ? e.message : "Perekaman gagal.",
+      );
+    } finally {
+      setBusy("");
+    }
+  };
   const run = async (scan: boolean) => {
     setBusy(scan ? "scan" : "test");
     setMessage("");
@@ -149,6 +182,77 @@ export function ModbusTools({ device }: { device: Device }) {
           {message}
         </p>
       )}
+      <div className="mt-6 border-t border-slate-200 pt-5">
+        <h3 className="mb-2 font-semibold">Rekam data mentah</h3>
+        <p className="mb-4 text-xs text-slate-500">
+          Buka koneksi TCP polos ke gateway dan catat semua byte yang lewat
+          apa adanya, tanpa asumsi protokol Modbus. Berguna kalau perangkat
+          diduga memakai protokol proprietary, bukan Modbus RTU/TCP.
+        </p>
+        <fieldset
+          disabled={!!busy}
+          className="flex flex-wrap items-end gap-3"
+        >
+          <label className="field w-32">
+            Durasi (ms)
+            <input
+              className="input"
+              type="number"
+              min={200}
+              max={15000}
+              step={100}
+              value={durationMs}
+              onChange={(e) => setDurationMs(+e.target.value)}
+            />
+          </label>
+          <label className="field min-w-0 flex-1">
+            Probe hex (opsional)
+            <input
+              className="input"
+              placeholder="mis. 08 03 00 00 00 02 C4 0B"
+              value={probeHex}
+              onChange={(e) => setProbeHex(e.target.value)}
+            />
+          </label>
+          <button
+            className="btn-secondary"
+            disabled={!!busy}
+            onClick={() => void capture()}
+          >
+            {busy === "capture" ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Radio size={16} />
+            )}
+            Rekam
+          </button>
+        </fieldset>
+        {captureMessage && (
+          <p className="mt-3 text-xs text-slate-500">{captureMessage}</p>
+        )}
+        {captureEvents && captureEvents.length > 0 && (
+          <div className="mt-3 max-h-64 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-3 font-mono text-xs">
+            {captureEvents.map((ev, i) => (
+              <div key={i} className="flex flex-wrap gap-2">
+                <span className="text-slate-400">
+                  {new Date(ev.at).toLocaleTimeString("id-ID")}
+                </span>
+                <span
+                  className={
+                    ev.direction === "rx"
+                      ? "font-semibold text-emerald-700"
+                      : "font-semibold text-brand-700"
+                  }
+                >
+                  {ev.direction === "rx" ? "RX" : "TX"}
+                </span>
+                <span className="break-all">{ev.hex}</span>
+                <span className="text-slate-400">({ev.length}B)</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

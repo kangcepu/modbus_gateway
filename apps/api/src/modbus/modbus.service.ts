@@ -10,6 +10,7 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import ModbusRTU from "modbus-serial";
+import { Socket } from "net";
 import { RtuTcpPort } from "./rtu-tcp-port";
 import { ModbusTag } from "./entities/modbus-tag.entity";
 import { Telemetry } from "./entities/telemetry.entity";
@@ -23,6 +24,7 @@ import {
   GatewayDto,
   HistoryDto,
   MachineDto,
+  RawCaptureDto,
   ScanUnitIdsDto,
   TagDto,
   TestConnectionDto,
@@ -388,6 +390,76 @@ export class ModbusService implements OnModuleInit, OnModuleDestroy {
       where: { id },
       relations: { gateway: true },
     });
+  }
+  // Protocol-agnostic diagnostic: connects a plain TCP socket to the gateway
+  // and records every raw byte exchanged, with no Modbus framing assumed.
+  // Used to determine what a device actually speaks when it doesn't respond
+  // to Modbus TCP/RTU at all (e.g. a proprietary "kiln bus" protocol).
+  async rawCapture(id: string, input: RawCaptureDto) {
+    const machine = await this.target(id);
+    const g = machine.gateway;
+    const key = this.endpoint(g);
+    if (this.locks.has(key))
+      throw new ConflictException(
+        "Gateway sedang dipoll atau diuji. Coba kembali beberapa saat lagi.",
+      );
+    this.locks.add(key);
+    const events: {
+      at: string;
+      direction: "rx" | "tx";
+      hex: string;
+      length: number;
+    }[] = [];
+    const socket = new Socket();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        socket.once("error", reject);
+        socket.connect(g.port, g.host, () => {
+          socket.removeListener("error", reject);
+          resolve();
+        });
+      });
+      socket.on("data", (data: Buffer) => {
+        events.push({
+          at: new Date().toISOString(),
+          direction: "rx",
+          hex: data.toString("hex"),
+          length: data.length,
+        });
+      });
+      this.logger.log(
+        `Raw capture: terhubung ke ${key}, merekam ${input.durationMs}ms.`,
+      );
+      if (input.probeHex) {
+        const probe = Buffer.from(input.probeHex, "hex");
+        socket.write(probe);
+        events.push({
+          at: new Date().toISOString(),
+          direction: "tx",
+          hex: probe.toString("hex"),
+          length: probe.length,
+        });
+      }
+      await new Promise((resolve) => setTimeout(resolve, input.durationMs));
+      return {
+        host: g.host,
+        port: g.port,
+        events,
+        totalBytesReceived: events
+          .filter((e) => e.direction === "rx")
+          .reduce((sum, e) => sum + e.length, 0),
+        message: events.some((e) => e.direction === "rx")
+          ? `Menerima ${events.filter((e) => e.direction === "rx").length} paket data mentah.`
+          : "Tidak ada data masuk selama perekaman. Perangkat tidak mengirim apa pun, baik unsolicited maupun sebagai balasan probe.",
+      };
+    } catch (e) {
+      throw new BadRequestException(
+        `Gateway TCP tidak dapat dihubungi: ${e instanceof Error ? e.message : "unknown error"}`,
+      );
+    } finally {
+      socket.destroy();
+      this.locks.delete(key);
+    }
   }
   async testConnection(id: string, input: TestConnectionDto) {
     const machine = await this.target(id);

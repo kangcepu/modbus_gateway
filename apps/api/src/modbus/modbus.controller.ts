@@ -18,6 +18,7 @@ import {
   GatewayDto,
   HistoryDto,
   MachineDto,
+  RawCaptureDto,
   ScanUnitIdsDto,
   TagDto,
   TestConnectionDto,
@@ -106,6 +107,12 @@ export class ModbusController {
     @Body() b: ScanUnitIdsDto,
   ) {
     return this.service.scanUnitIds(id, b);
+  }
+  @Post("devices/:id/raw-capture") @UseGuards(AdminGuard) rawCapture(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() b: RawCaptureDto,
+  ) {
+    return this.service.rawCapture(id, b);
   }
   @Patch("tags/:id") @UseGuards(AdminGuard) updateTag(
     @Param("id", ParseUUIDPipe) id: string,

@@ -10,6 +10,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   Max,
   MaxLength,
   Min,
@@ -72,6 +73,16 @@ export class ScanUnitIdsDto {
   @IsOptional() @IsInt() @IsIn([1, 2, 3, 4]) functionCode = 3;
   @IsOptional() @IsInt() @Min(0) @Max(65535) address = 0;
   @IsOptional() @IsInt() @Min(100) @Max(2000) timeoutMs = 200;
+}
+export class RawCaptureDto {
+  @IsOptional() @IsInt() @Min(200) @Max(15000) durationMs = 3000;
+  @IsOptional()
+  @IsString()
+  @Matches(/^([0-9a-fA-F]{2})*$/, {
+    message: "probeHex harus berupa pasangan digit heksadesimal, mis. 08030000000244 0B.",
+  })
+  @MaxLength(510)
+  probeHex?: string;
 }
 export class TestConnectionDto {
   @IsOptional() @IsInt() @Min(0) @Max(247) unitId?: number;
